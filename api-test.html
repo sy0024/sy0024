@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101010">
+  <title>红果 H5 · 接口测试</title>
+  <style>
+    :root{color-scheme:dark;--bg:#111110;--panel:#1b1a18;--line:#393632;--text:#f4f0e9;--muted:#aaa39a;--accent:#f16a4d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.65 system-ui,-apple-system,"Noto Sans SC",sans-serif}.wrap{max-width:900px;margin:0 auto;padding:34px 22px 60px}a{color:#ff997c}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.top a{text-decoration:none}.tag{font-size:11px;letter-spacing:1.5px;color:#ed987b}.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:22px;margin:16px 0}.card h2{font-size:17px;margin:0 0 12px}.muted{color:var(--muted);font-size:12px}.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form label{display:flex;flex-direction:column;gap:6px;color:#c9c2b9;font-size:12px}.form label:first-child{grid-column:1/-1}input{width:100%;height:42px;border-radius:7px;border:1px solid var(--line);background:#10100f;color:var(--text);padding:0 11px;font:inherit}button{border:0;border-radius:7px;padding:11px 15px;background:var(--accent);color:white;font-weight:650;cursor:pointer}.buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}.buttons button.secondary{background:#302e2a;border:1px solid var(--line)}.result{margin-top:14px;min-height:44px;background:#111;padding:12px;border-radius:7px;color:#c6c0b8;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto}.routes{display:grid;grid-template-columns:160px 1fr;gap:8px 14px;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}.routes span:nth-child(odd){color:#eaa184}.notice{border-left:3px solid #d88a55;padding:10px 13px;background:#29231d;color:#c9b9a7;font-size:12px}.ok{color:#91d6a5}.bad{color:#ff927f}@media(max-width:600px){.form{grid-template-columns:1fr}.form label:first-child{grid-column:auto}.routes{grid-template-columns:1fr;gap:2px}.routes span:nth-child(even){margin-bottom:9px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top"><a href="./">← 返回红果 H5</a><span class="tag">API TEST CONSOLE</span></div>
+    <h1>接口连通测试</h1>
+    <p class="muted">测试当前页面能否访问你自己部署的 hongguoTV bridge，以及它的目录、详情和播放解析接口。</p>
+
+    <section class="card">
+      <h2>服务连接</h2>
+      <div class="form">
+        <label>hongguoTV bridge 地址<input id="base" type="url" placeholder="http://192.168.1.10:8787"></label>
+        <label>访问口令（没有则留空）<input id="token" type="password" autocomplete="current-password" placeholder="BRIDGE_TOKEN"></label>
+        <label>剧集 ID（测试详情 / 播放解析）<input id="series" inputmode="numeric" placeholder="从首页接口结果复制 id"></label>
+      </div>
+      <div class="buttons"><button id="health">测试 /health</button><button class="secondary" id="home">读取首页</button><button class="secondary" id="search">搜索测试</button><button class="secondary" id="detail">读取详情</button><button class="secondary" id="resolve">测试播放解析</button></div>
+      <div class="result" id="output" aria-live="polite">测试结果会显示在这里。</div>
+    </section>
+
+    <section class="card">
+      <h2>资料中找到的红果接口路径</h2>
+      <p class="muted">这些路径来自 hongguoTV 项目的接口调研记录，是非官方、未经保证的实现线索，不是红果公开 API 文档。H5 不会直接请求这些上游地址。</p>
+      <div class="routes"><span>站内搜索</span><span>GET /reading/bookapi/search/tab/v</span><span>剧集 / 分集详情</span><span>POST /novel/player/multi_video_detail/v1/</span><span>视频模型 / 播放解析</span><span>POST /novel/player/multi_video_model/v1/</span><span>预加载详情</span><span>POST /novel/player/multi_video_detail/preload/v1</span><span>预加载视频模型</span><span>POST /novel/player/multi_video_model/preload/v1</span><span>官网搜索 / 详情</span><span>https://hongguoduanju.com/search/{keyword}<br>https://hongguoduanju.com/detail?series_id={id}</span></div>
+      <p class="notice" style="margin-top:16px"><strong>为什么不让浏览器直连？</strong>调研记录指出 App 搜索和视频模型请求依赖客户端签名及设备参数；播放资源还有额外解析 / 加密处理。直接从 H5 发普通 fetch 不能替代这些流程，浏览器跨域策略也可能拦截请求。这里不实现签名模拟或加密绕过。使用下方 bridge API 测试即可验证 H5 对接链路。</p>
+      <p class="muted">资料：<a href="https://github.com/N3urda/hongguoTV/blob/main/docs/research/2026-09-21-hongguo-open-source.md" target="_blank" rel="noreferrer">接口开源项目调研</a> · <a href="https://github.com/N3urda/hongguoTV/blob/main/docs/API.md" target="_blank" rel="noreferrer">bridge API v1</a></p>
+    </section>
+    <section class="card"><h2>H5 实际调用的 bridge API</h2><div class="routes"><span>健康检查</span><span>GET /health</span><span>首页列表</span><span>GET /api/home?page=1</span><span>搜索</span><span>GET /api/search?q=关键词&amp;page=1</span><span>剧集详情 / 分集列表</span><span>GET /api/series/{seriesId}</span><span>解析播放</span><span>GET /api/episodes/{episodeId}/play?fresh=1</span><span>视频流</span><span>GET /api/episodes/{episodeId}/stream</span></div><p class="muted">在线播放接口支持 Range。浏览器测试必须能访问服务地址；跨域时需服务端配置 CORS，HTTPS 页面还不能直接加载不安全的 HTTP 服务。</p></section>
+  </main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const output = $('output');
+  const saved = (() => { try { return JSON.parse(localStorage.getItem('hongguo-h5-settings-v1') || '{}'); } catch { return {}; } })();
+  $('base').value = saved.baseUrl || '';
+  $('token').value = saved.token || '';
+  const base = () => { const url = $('base').value.trim().replace(/\/+$/, ''); if (!/^https?:\/\/[a-z\d.\-\[\]:]+(?::\d+)?$/i.test(url)) throw new Error('请输入完整服务地址，例如 http://192.168.1.10:8787'); return url; };
+  async function call(path) {
+    const token = $('token').value.trim();
+    const response = await fetch(base() + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    const type = response.headers.get('content-type') || '';
+    const data = type.includes('json') ? await response.json() : await response.text();
+    if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+    try { localStorage.setItem('hongguo-h5-settings-v1', JSON.stringify({ baseUrl: base(), token })); } catch {}
+    return data;
+  }
+  async function run(label, action) {
+    output.className = 'result'; output.textContent = `${label} 请求中…`;
+    try { const data = await action(); output.innerHTML = '<span class="ok">✓ 请求成功</span>\n' + escapeHtml(JSON.stringify(data, null, 2)); }
+    catch (error) { output.innerHTML = '<span class="bad">✕ 请求失败</span>\n' + escapeHtml(error instanceof TypeError ? '浏览器无法读取服务：检查地址、网络、HTTPS/HTTP 混合内容和服务端 CORS。' : error.message); }
+  }
+  function escapeHtml(text) { return String(text).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  $('health').onclick = () => run('健康检查', () => call('/health'));
+  $('home').onclick = () => run('首页目录', () => call('/api/home?page=1'));
+  $('search').onclick = () => { const q = prompt('输入搜索关键词'); if (q?.trim()) run('搜索目录', () => call(`/api/search?q=${encodeURIComponent(q.trim())}&page=1`)); };
+  $('detail').onclick = () => { const id = $('series').value.trim(); if (!id) { output.textContent = '请先填写剧集 ID。'; return; } run('剧集详情', () => call(`/api/series/${encodeURIComponent(id)}`)); };
+  $('resolve').onclick = async () => {
+    const id = prompt('输入 episode ID（可先读取详情并复制 episodes[].id）');
+    if (!id?.trim()) return;
+    run('播放地址解析（仅检查 JSON，不下载视频）', () => call(`/api/episodes/${encodeURIComponent(id.trim())}/play?fresh=1`));
+  };
+})();
+</script>
+</body>
+</html>
